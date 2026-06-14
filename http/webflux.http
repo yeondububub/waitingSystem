@@ -1,0 +1,2 @@
+###
+POST http://localhost:9090/api/v1/waiting/queue?userId=3
