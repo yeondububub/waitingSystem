@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: website
+  config:
+    activate:
+      on-profile: local
+
+server:
+  port: 8080

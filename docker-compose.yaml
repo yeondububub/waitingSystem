@@ -1,0 +1,9 @@
+services:
+  redis:
+    container_name: waiting-system-redis
+    image: redis:7.2-alpine
+    labels:
+      - "name=redis"
+      - "mode=standalone"
+    ports:
+      - '6379:6379'

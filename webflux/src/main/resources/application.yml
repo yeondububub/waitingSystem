@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: webflux
+  config:
+    activate:
+      on-profile: local
+
+server:
+  port: 9090
