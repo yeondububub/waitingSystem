@@ -1,5 +1,6 @@
 package com.example.webflux.repository;
 
+import com.example.webflux.config.EmbeddedRedis;
 import com.example.webflux.service.QueueManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.ReactiveRedisConnection;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
@@ -83,5 +87,24 @@ public class RedisRepositoryTest {
         StepVerifier.create(redisRepository.zRank(queue, 99L))
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    void popMin() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+
+        long timestamp = Instant.now().getEpochSecond();
+
+        Mono<Boolean> setup = redisRepository.addZSet(queue, 1L, timestamp)
+                .then(redisRepository.addZSet(queue, 2L, timestamp + 1L))
+                .then(redisRepository.addZSet(queue, 3L, timestamp + 2L));
+
+        Flux<ZSetOperations.TypedTuple<String>> result = setup.thenMany(redisRepository.popMin(queue, 3L));
+
+        StepVerifier.create(result)
+                .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("1"))
+                .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("2"))
+                .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("3"))
+                .verifyComplete();
     }
 }
