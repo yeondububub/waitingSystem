@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.util.List;
 
 @SpringBootTest
 @Profile("test")
@@ -105,6 +106,33 @@ public class RedisRepositoryTest {
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("1"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("2"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("3"))
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWithEmpty() {
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        StepVerifier.create(redisRepository.scan(pattern, count).collectList())
+                .expectNextMatches(List::isEmpty)
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWhenExistQueueData() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        long timestamp = Instant.now().getEpochSecond();
+
+        Mono<Boolean> setup = redisRepository.addZSetIfAbsent(queue, 1L, timestamp)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, timestamp + 1L))
+                .then(redisRepository.addZSetIfAbsent(queue, 3L, timestamp + 2L));
+
+        StepVerifier.create(setup.thenMany(redisRepository.scan(pattern, count).collectList()))
+                .expectNextMatches(list -> list.contains(queue))
                 .verifyComplete();
     }
 }
