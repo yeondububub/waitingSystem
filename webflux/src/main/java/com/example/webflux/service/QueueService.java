@@ -41,4 +41,14 @@ public class QueueService {
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0);
     }
+
+    public Mono<Long> checked(Long userId) {
+        return isAllowed(userId)
+                .filter(Boolean::booleanValue)
+                .flatMap(allowed -> Mono.just(0L))
+                .switchIfEmpty(enqueueWaitingQueue(userId)
+                        .onErrorResume(ex -> redisRepository.zRank(QueueManager.WAITING_QUEUE.getKey(),  userId)
+                                .map(i -> i >= 0 ? i + 1 : i))
+                );
+    }
 }

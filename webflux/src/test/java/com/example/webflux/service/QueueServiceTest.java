@@ -106,4 +106,17 @@ class QueueServiceTest {
                 .verifyComplete();
     }
 
+    @Test
+    @DisplayName("허용된 유저이면 순위 0을 반환한다.")
+    void checked(){
+        Long userId = 100L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                        .then(queueService.allow(1L))
+                        .then(queueService.checked(userId))
+                )
+                .expectNext(0L)
+                .verifyComplete();
+    }
+
 }

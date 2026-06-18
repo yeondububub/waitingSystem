@@ -1,5 +1,6 @@
 package com.example.webflux.controller;
 
+import com.example.common.QueueStatusResponse;
 import com.example.webflux.controller.dto.AllowResultResponse;
 import com.example.webflux.controller.dto.AllowedResponse;
 import com.example.webflux.controller.dto.WaitingQueueResponse;
@@ -33,5 +34,9 @@ public class QueueController {
                 .map(AllowedResponse::new);
     }
 
-
+    @GetMapping("/queue/checked")
+    public Mono<QueueStatusResponse> checked(@RequestParam("userId") Long userId) {
+        return queueService.checked(userId)
+                .map(rank -> new QueueStatusResponse(rank == 0, rank));
+    }
 }
