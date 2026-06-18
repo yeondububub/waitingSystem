@@ -4,11 +4,12 @@ import com.example.common.QueueStatusResponse;
 import com.example.website.service.WaitingQueueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-@Configuration
+@Controller
 @RequiredArgsConstructor
 public class HomeController {
     private final WaitingQueueService waitingQueueService;
