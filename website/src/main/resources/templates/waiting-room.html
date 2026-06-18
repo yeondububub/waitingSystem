@@ -48,14 +48,36 @@
         잠시만 기다려 주시기 바랍니다.
     </div>
 
-    <div class="rank" th:text="${rank} + ' 명'">0 명</div>
+    <div class="rank"><span id="rank">[[${rank}]]</span> 명</div>
 
     <div class="time" th:text="'예상 대기 시간: 약 ' + ${rank} + ' 분'">예상 대기 시간: 약 0분</div>
 
     <div style="margin-top: 2rem;">
         순서가 되면 자동으로 접속됩니다.<br/>
-        페이지 새로고침시 처음부터 대기하셔야 합니다.
     </div>
 </div>
+
+<script>
+    function fetchWaitingQueue() {
+        const userId = `[[${userId}]]`;
+        const queryParam = new URLSearchParams({userId : userId});
+        const _rank = document.querySelector("#rank");
+
+        fetch('http://localhost:9090/api/v1/queue/checked?' + queryParam, { credentials : "include" })
+            .then(response => response.json())
+            .then(data => {
+                const rank = parseInt(data.rank);
+                if(rank < 1) {
+                    _rank.innerHTML = '0';
+                    window.location.href = `/index?${queryParam}`;
+                    return;
+                }
+
+                _rank.innerHTML = `${rank}`;
+            }).catch(error => console.error(error));
+    }
+
+    setInterval(fetchWaitingQueue, 3000);
+</script>
 </body>
 </html>
