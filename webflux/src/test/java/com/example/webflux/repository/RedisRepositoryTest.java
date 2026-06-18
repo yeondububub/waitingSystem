@@ -34,27 +34,27 @@ public class RedisRepositoryTest {
     }
 
     @Test
-    void addZSet() {
+    void addZSetIfAbsent() {
         Long userId = 1L;
         long timestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, timestamp))
                 .expectNext(true)
                 .verifyComplete();
     }
 
     @Test
-    void addZSetWhenDuplicate() {
+    void addZSetIfAbsentWhenDuplicate() {
         Long userId = 1L;
         long timestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, timestamp))
                 .expectNext(true)
                 .verifyComplete();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, timestamp))
                 .expectNext(false)
                 .verifyComplete();
     }
@@ -63,7 +63,7 @@ public class RedisRepositoryTest {
     void zRank() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, 1L, 100L)
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, 1L, 100L)
                 .then(redisRepository.zRank(queue, 1L)))
                 .expectNext(0L)
                 .verifyComplete();
@@ -73,8 +73,8 @@ public class RedisRepositoryTest {
     void zRankWhenMultiUser() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, 1L, 100L)
-                .then(redisRepository.addZSet(queue, 2L, 99L))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, 1L, 100L)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, 99L))
                 .then(redisRepository.zRank(queue, 2L)))
                 .expectNext(0L)
                 .verifyComplete();
@@ -95,9 +95,9 @@ public class RedisRepositoryTest {
 
         long timestamp = Instant.now().getEpochSecond();
 
-        Mono<Boolean> setup = redisRepository.addZSet(queue, 1L, timestamp)
-                .then(redisRepository.addZSet(queue, 2L, timestamp + 1L))
-                .then(redisRepository.addZSet(queue, 3L, timestamp + 2L));
+        Mono<Boolean> setup = redisRepository.addZSetIfAbsent(queue, 1L, timestamp)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, timestamp + 1L))
+                .then(redisRepository.addZSetIfAbsent(queue, 3L, timestamp + 2L));
 
         Flux<ZSetOperations.TypedTuple<String>> result = setup.thenMany(redisRepository.popMin(queue, 3L));
 

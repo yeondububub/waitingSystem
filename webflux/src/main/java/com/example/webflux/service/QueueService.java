@@ -18,7 +18,7 @@ public class QueueService {
     public Mono<Long> enqueueWaitingQueue(Long userId) {
         long unixTimestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
-        return redisRepository.addZSet(queue, userId, unixTimestamp)
+        return redisRepository.addZSetIfAbsent(queue, userId, unixTimestamp)
                 .filter(i -> i)
                 .switchIfEmpty(Mono.error(QueueErrorCode.ALREADY_RESISTER_USER.build()))
                 .flatMap(i -> redisRepository.zRank(queue, userId))
@@ -27,7 +27,7 @@ public class QueueService {
 
     public Mono<Long> allow(Long count) {
         return redisRepository.popMin(QueueManager.WAITING_QUEUE.getKey(), count)
-                .flatMap(member -> redisRepository.addZSet(
+                .flatMap(member -> redisRepository.addZSetIfAbsent(
                         QueueManager.PROCEED_QUEUE.getKey(),
                         Long.parseLong(Objects.requireNonNull(member.getValue())),
                         Instant.now().getEpochSecond()

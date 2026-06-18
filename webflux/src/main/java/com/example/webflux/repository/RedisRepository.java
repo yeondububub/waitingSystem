@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface RedisRepository {
 
-    Mono<Boolean> addZSet(String queue, Long userId, Long timeStamp);
+    Mono<Boolean> addZSetIfAbsent(String queue, Long userId, Long timeStamp);
     Mono<Long> zRank(String queue, Long userId);
 
     Flux<ZSetOperations.TypedTuple<String>> popMin(String queue, Long count);
