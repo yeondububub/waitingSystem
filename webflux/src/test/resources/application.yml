@@ -6,3 +6,7 @@ spring:
     redis:
       host: localhost
       port: 63790
+
+scheduler:
+  enabled: true
+  max-allow-user-count: 1000

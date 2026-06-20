@@ -32,6 +32,7 @@ class QueueServiceTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에 유저를 추가하면 대기 순번을 응답한다")
     void enqueueWaitingQueue() {
         StepVerifier.create(queueService.enqueueWaitingQueue(1L))
                 .expectNext(1L)
@@ -76,47 +77,60 @@ class QueueServiceTest {
                 .verifyComplete();
     }
 
-    @DisplayName("허용된 유저가 아니면 false를 반환한다")
     @Test
-    void isNotAllowed() {
-        StepVerifier.create(queueService.isAllowed(99L))
-                .expectNext(false)
-                .verifyComplete();
-    }
-
-    @DisplayName("대기열 큐에서 허용된 후 다른 아이디로 허용 여부 확인하면 false 반환한다")
-    @Test
-    void isAllowedOtherUserId() {
-        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
-                        .then(queueService.allow(3L))
-                        .then(queueService.isAllowed(101L)))
-                .expectNext(false)
-                .verifyComplete();
-    }
-
-    @DisplayName("대기열 큐에서 허용된 아이디로 여부 확인하면 true 반환한다")
-    @Test
-    void isAllowed() {
+    @DisplayName("토큰 생성 검증")
+    void generateToken() {
         Long userId = 100L;
 
-        StepVerifier.create(queueService.enqueueWaitingQueue(userId)
-                        .then(queueService.allow(3L))
-                        .then(queueService.isAllowed(userId)))
+        StepVerifier.create(queueService.generateToken(userId))
+                .expectNext("2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f")
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("올바르지 않은 토큰인 경우 허용 여부 확인 시 false를 반환한다")
+    void isNotAllowedByToken() {
+        Long userId = 100L;
+        String token = "wrong-token";
+
+        StepVerifier.create(queueService.isAllowedByToken(userId, token))
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("올바른 토큰인 경우 허용 여부 확인 시 true를 반환한다")
+    void isAllowedByToken() {
+        Long userId = 100L;
+        String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
+
+        StepVerifier.create(queueService.isAllowedByToken(userId, token))
                 .expectNext(true)
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("허용된 유저이면 순위 0을 반환한다.")
-    void checked(){
-        Long userId = 100L;
+    @DisplayName("대기열에 없는 유저인 경우 -1를 반환한다")
+    void checkedWhenNoneRegisterUserId() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        Long userId = 99L;
 
-        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
-                        .then(queueService.allow(1L))
-                        .then(queueService.checked(userId))
-                )
-                .expectNext(0L)
+        StepVerifier.create(queueService.rank(queue, userId))
+                .expectNext(-1L)
                 .verifyComplete();
     }
 
+    @Test
+    @DisplayName("대기열에 있는 유저의 경우 대기열 순위를 반환한다")
+    void checkedWhenExistWaitingQueue() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        Long userId = 101L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                        .then(queueService.enqueueWaitingQueue(userId))
+                        .then(queueService.enqueueWaitingQueue(102L))
+                        .then(queueService.rank(queue, userId)))
+                .expectNext(2L)
+                .verifyComplete();
+    }
 }

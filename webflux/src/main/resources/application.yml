@@ -14,4 +14,4 @@ server:
 
 scheduler:
   enabled: true
-  max-allow-user-count: 3
+  max-allow-user-count: 1000

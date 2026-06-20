@@ -3,14 +3,15 @@ package com.example.webflux.repository;
 import com.example.webflux.config.EmbeddedRedis;
 import com.example.webflux.service.QueueManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.ReactiveRedisConnection;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -18,8 +19,9 @@ import reactor.test.StepVerifier;
 import java.time.Instant;
 import java.util.List;
 
+
 @SpringBootTest
-@Profile("test")
+@ActiveProfiles("test")
 @Import(EmbeddedRedis.class)
 public class RedisRepositoryTest {
 
@@ -35,6 +37,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에 사용자가 없으면 성공적으로 등록한다.")
     void addZSetIfAbsent() {
         Long userId = 1L;
         long timestamp = Instant.now().getEpochSecond();
@@ -46,6 +49,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에 등록된 사용자의 경우 false를 반환한다.")
     void addZSetIfAbsentWhenDuplicate() {
         Long userId = 1L;
         long timestamp = Instant.now().getEpochSecond();
@@ -61,6 +65,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에서 사용자의 순위(0-based)를 조회한다.")
     void zRank() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
@@ -71,6 +76,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("여러 사용자가 대기열에 등록되었을 때 타임스탬프 순서대로 순위를 조회한다.")
     void zRankWhenMultiUser() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
@@ -82,6 +88,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에 등록되지 않은 사용자의 순위를 조회하면 빈 값을 반환한다.")
     void zRankByNoneUserId() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
@@ -91,6 +98,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("대기열 큐에서 가장 오래 대기한 지정된 수만큼의 사용자들을 제거하며 가져온다.")
     void popMin() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
@@ -110,6 +118,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("패턴에 매칭되는 큐 키를 조회할 때 데이터가 없으면 빈 리스트를 반환한다.")
     void scanWithEmpty() {
         String pattern = "wait:*";
         Long count = 100L;
@@ -120,6 +129,7 @@ public class RedisRepositoryTest {
     }
 
     @Test
+    @DisplayName("패턴에 매칭되는 큐 키를 조회할 때 매칭되는 큐 키들을 반환한다.")
     void scanWhenExistQueueData() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
         String pattern = "wait:*";
@@ -134,5 +144,20 @@ public class RedisRepositoryTest {
         StepVerifier.create(setup.thenMany(redisRepository.scan(pattern, count).collectList()))
                 .expectNextMatches(list -> list.contains(queue))
                 .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Lua 스크립트를 사용하여 대기열 등록과 대기 순위 조회를 원자적으로 수행한다.")
+    void luaScript() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+
+        StepVerifier.create(redisRepository.addZSetIfAbsentAndRank(queue, 1L, 100L)
+                        .then(redisRepository.addZSetIfAbsentAndRank(queue, 2L, 101L))
+                        .then(redisRepository.addZSetIfAbsentAndRank(queue, 3L, 102L))
+                        .then(redisRepository.addZSetIfAbsentAndRank(queue, 4L, 103L))
+                )
+                .expectNext(3L)
+                .verifyComplete();
+
     }
 }

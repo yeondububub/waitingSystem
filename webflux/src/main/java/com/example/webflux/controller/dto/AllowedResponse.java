@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AllowedResponse {
-    private boolean allowed;
+    public boolean allowed;
 }

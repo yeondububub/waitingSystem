@@ -6,11 +6,14 @@ import org.springframework.data.redis.connection.zset.Tuple;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -32,6 +35,20 @@ public class RedisRepositoryImpl implements RedisRepository {
                 .zAdd(Mono.just(zAddCommand))
                 .next()
                 .map(response -> response.getOutput() != null && response.getOutput().intValue() == 1);
+    }
+
+    @Override
+    public Mono<Long> addZSetIfAbsentAndRank(String queue, Long userId, Long timestamp) {
+        String script = """
+        local added = redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[1])
+        return redis.call('ZRANK', KEYS[1], ARGV[1])
+        """;
+
+        List<String> keys = Collections.singletonList(queue);
+        List<String> args = List.of(userId.toString(), timestamp.toString());
+
+        return reactiveRedisTemplate.execute(RedisScript.of(script, Long.class), keys, args)
+                .next();
     }
 
     @Override
