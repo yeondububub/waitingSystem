@@ -79,7 +79,7 @@ public class QueueService {
     }
 
     @Scheduled(initialDelay = 5000, fixedDelay = 10000)
-    public void allowWaitQueueUser() {
+    private void allowWaitQueueUser() {
         if (!schedulerEnabled) {
             log.info("passed scheduling");
             return;

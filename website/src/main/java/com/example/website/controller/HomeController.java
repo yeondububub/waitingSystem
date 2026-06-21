@@ -36,16 +36,11 @@ public class HomeController {
 
     private String getToken(HttpServletRequest request) {
         final String COOKIE_NAME = "user-queue-token";
-        Cookie[] cookies = request.getCookies();
-        String token = "";
-        if (cookies != null) {
-            Optional<Cookie> cookie = Arrays.stream(cookies).filter(
-                    i -> i.getName().equals(COOKIE_NAME)
-            ).findFirst();
-            token = cookie.orElse(new Cookie(COOKIE_NAME, "")).getValue();
-        }
+        Optional<Cookie> cookie = Arrays.stream(request.getCookies())
+                .filter(c -> c.getName().equalsIgnoreCase(COOKIE_NAME))
+                .findFirst();
 
-        return token;
+        return cookie.isPresent() ? cookie.get().getValue() : "";
     }
 
     private boolean isValidToken(Long userId, String token) {
