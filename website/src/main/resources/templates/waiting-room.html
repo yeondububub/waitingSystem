@@ -50,26 +50,28 @@
 
     <div class="rank"><span id="rank">[[${rank}]]</span> 명</div>
 
-    <div class="time" th:text="'예상 대기 시간: 약 ' + ${rank} + ' 분'">예상 대기 시간: 약 0분</div>
-
     <div style="margin-top: 2rem;">
-        순서가 되면 자동으로 접속됩니다.<br/>
+        순서가 되면 자동으로 접속됩니다.
     </div>
 </div>
-
 <script>
     function fetchWaitingQueue() {
         const userId = `[[${userId}]]`;
         const queryParam = new URLSearchParams({userId : userId});
         const _rank = document.querySelector("#rank");
 
-        fetch('http://localhost:9090/api/v1/queue/checked?' + queryParam, { credentials : "include" })
+        fetch('http://localhost:9090/api/v1/waiting/queue/rank?' + queryParam, { credentials : "include" })
             .then(response => response.json())
             .then(data => {
                 const rank = parseInt(data.rank);
                 if(rank < 1) {
-                    _rank.innerHTML = '0';
-                    window.location.href = `/index?${queryParam}`;
+                    console.log(`호출 : ${rank}`);
+                    fetch('http://localhost:9090/api/v1/touch?' + queryParam, { credentials : "include" })
+                        .then(response => {
+                            console.log(response);
+                            _rank.innerHTML = '0';
+                            window.location.href = `/index?${queryParam}`;
+                        }).catch(error => console.error(error));
                     return;
                 }
 
