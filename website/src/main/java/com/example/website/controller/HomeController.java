@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -22,24 +22,29 @@ public class HomeController {
     private final WaitingQueueService waitingQueueService;
 
     @GetMapping("/index")
-    public String home(@ModelAttribute(name = "userId") Long userId, Model model, HttpServletRequest request) {
+    public String home(@RequestParam(name = "userId") Long userId, Model model, HttpServletRequest request) {
         String token = getToken(request);
-        if (token != null && isValidToken(userId, token)) {
+        if (!token.isEmpty() && isValidToken(userId, token)) {
             return "index";
         }
 
         QueueStatusResponse response = waitingQueueService.accessibleCheck(userId);
-
         model.addAttribute("rank", response.rank());
+        model.addAttribute("userId", userId);
         return "waiting-room";
     }
 
     private String getToken(HttpServletRequest request) {
         final String COOKIE_NAME = "user-queue-token";
-        Optional<Cookie> cookie = Arrays.stream(request.getCookies())
-                .filter(c -> c.getName().equalsIgnoreCase(COOKIE_NAME))
-                .findFirst();
+        Cookie[] cookies = request.getCookies();
 
+        if(cookies == null) {
+            return "";
+        }
+
+        Optional<Cookie> cookie = Arrays.stream(cookies)
+                .filter(i -> i.getName().equalsIgnoreCase(COOKIE_NAME))
+                .findFirst();
         return cookie.isPresent() ? cookie.get().getValue() : "";
     }
 

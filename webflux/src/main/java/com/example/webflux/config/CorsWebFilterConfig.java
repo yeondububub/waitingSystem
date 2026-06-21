@@ -15,7 +15,12 @@ public class CorsWebFilterConfig {
     @Bean
     public CorsWebFilter corsFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:8080"));
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+                "http://localhost:*",
+                "http://127.0.0.1:*"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);

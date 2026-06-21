@@ -88,6 +88,23 @@ class QueueServiceTest {
     }
 
     @Test
+    @DisplayName("처리한 대기열 유저의 개수를 반환한다.")
+    void allowUserByCount() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        Long count = 100L;
+
+        Mono<Long> setup = queueService.enqueueWaitingQueue(1L)
+                .then(queueService.enqueueWaitingQueue(2L))
+                .then(queueService.enqueueWaitingQueue(3L))
+                .then(queueService.enqueueWaitingQueue(4L))
+                .then(queueService.enqueueWaitingQueue(5L));
+
+        StepVerifier.create(setup.then(queueService.allow(count)))
+                .expectNext(5L)
+                .verifyComplete();
+    }
+
+    @Test
     @DisplayName("올바르지 않은 토큰인 경우 허용 여부 확인 시 false를 반환한다")
     void isNotAllowedByToken() {
         Long userId = 100L;

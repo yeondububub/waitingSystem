@@ -1,5 +1,8 @@
 ### 대기열 큐에 추가
 POST http://localhost:9090/api/v1/waiting/queue?userId=3
 
+### rank
+GET http://localhost:9090/api/v1/waiting/queue/rank?userId=3
+
 ### 대기열 큐 확인
-GET http://localhost:9090/api/v1/queue/checked?userId=3
+GET http://localhost:9090/api/v1/waiting/queue/checked?userId=3
