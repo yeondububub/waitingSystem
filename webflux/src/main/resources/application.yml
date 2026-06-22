@@ -19,3 +19,4 @@ scheduler:
 queue:
   token:
     secret-salt: "my-secure-unique-salt-key-9999!"
+    val-seconds: 300

@@ -32,6 +32,9 @@ public class QueueService {
     @Value("${queue.token.secret-salt}")
     private String tokenSecretSalt;
 
+    @Value("${queue.token.val-seconds}")
+    private long tokenValSeconds;
+
     public Mono<Long> enqueueWaitingQueue(Long userId) {
         long unixTimestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
@@ -100,6 +103,22 @@ public class QueueService {
                         .map(allowedCount -> Tuple.of(queue.getBytes(), allowedCount.doubleValue())))
                 .doOnNext(tuple -> log.info("Tried %d and allowed %d members of %s queue"
                         .formatted(maxAllowUserCount, tuple.getScore().longValue(), new String(tuple.getValue()))))
+                .subscribe();
+    }
+
+    @Scheduled(initialDelay = 5000, fixedDelay = 10000)
+    void pruneExpiredProceedUsers() {
+        if (!schedulerEnabled) {
+            return;
+        }
+
+        long thresholdTime = Instant.now().getEpochSecond() - tokenValSeconds;
+        redisRepository.removeRangeByScore(QueueManager.PROCEED_QUEUE.getKey(), Double.NEGATIVE_INFINITY, (double) thresholdTime)
+                .doOnNext(removedCount -> {
+                    if (removedCount > 0) {
+                        log.info("Removed {} expired users from proceed queue", removedCount);
+                    }
+                })
                 .subscribe();
     }
 

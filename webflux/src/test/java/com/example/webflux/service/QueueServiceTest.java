@@ -168,4 +168,35 @@ class QueueServiceTest {
                 .expectNext(2L)
                 .verifyComplete();
     }
+
+    @Test
+    @DisplayName("만료된 진입 허용 세션을 스케줄러로 정리하면 진입이 불가능해진다")
+    void pruneExpiredProceedUsers() {
+        Long expiredUserId = 200L;
+        Long validUserId = 201L;
+
+        long now = java.time.Instant.now().getEpochSecond();
+        long expiredTimestamp = now - 10;
+        long validTimestamp = now;
+
+        Mono<Void> setup = reactiveRedisTemplate.opsForZSet().add(QueueManager.PROCEED_QUEUE.getKey(), expiredUserId.toString(), expiredTimestamp)
+                .then(reactiveRedisTemplate.opsForZSet().add(QueueManager.PROCEED_QUEUE.getKey(), validUserId.toString(), validTimestamp))
+                .then();
+
+        StepVerifier.create(setup)
+                .verifyComplete();
+
+        // prune 실행
+        queueService.pruneExpiredProceedUsers();
+
+        // expiredUserId는 proceed queue에서 지워졌으므로 isAllowed(userId)가 false여야 함
+        StepVerifier.create(queueService.isAllowed(expiredUserId))
+                .expectNext(false)
+                .verifyComplete();
+
+        // validUserId는 proceed queue에 남아있으므로 isAllowed(userId)가 true여야 함
+        StepVerifier.create(queueService.isAllowed(validUserId))
+                .expectNext(true)
+                .verifyComplete();
+    }
 }

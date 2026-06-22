@@ -11,4 +11,5 @@ public interface RedisRepository {
     Mono<Long> zRank(String queue, Long userId);
     Flux<ZSetOperations.TypedTuple<String>> popMin(String queue, Long count);
     Flux<String> scan(String pattern, Long count);
+    Mono<Long> removeRangeByScore(String queue, Double min, Double max);
 }

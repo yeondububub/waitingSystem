@@ -14,4 +14,5 @@ scheduler:
 queue:
   token:
     secret-salt: "test-salt-key"
+    val-seconds: 3
 

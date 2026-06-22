@@ -71,4 +71,10 @@ public class RedisRepositoryImpl implements RedisRepository {
                 .build()
         );
     }
+
+    @Override
+    public Mono<Long> removeRangeByScore(String queue, Double min, Double max) {
+        return reactiveRedisTemplate.opsForZSet()
+                .removeRangeByScore(queue, org.springframework.data.domain.Range.closed(min, max));
+    }
 }
