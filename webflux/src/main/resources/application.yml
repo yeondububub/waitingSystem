@@ -15,3 +15,7 @@ server:
 scheduler:
   enabled: true
   max-allow-user-count: 1000
+
+queue:
+  token:
+    secret-salt: "my-secure-unique-salt-key-9999!"

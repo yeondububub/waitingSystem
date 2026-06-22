@@ -29,6 +29,9 @@ public class QueueService {
     @Value("${scheduler.max-allow-user-count}")
     private long maxAllowUserCount = 0;
 
+    @Value("${queue.token.secret-salt}")
+    private String tokenSecretSalt;
+
     public Mono<Long> enqueueWaitingQueue(Long userId) {
         long unixTimestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
@@ -60,10 +63,16 @@ public class QueueService {
                 .count();
     }
 
+    public Mono<Boolean> isAllowed(Long userId) {
+        return redisRepository.zRank(QueueManager.PROCEED_QUEUE.getKey(), userId)
+                .map(rank -> true)
+                .defaultIfEmpty(false);
+    }
+
     public Mono<Boolean> isAllowedByToken(Long userId, String token) {
         return this.generateToken(userId)
                 .filter(other -> other.equals(token))
-                .map(i -> true)
+                .flatMap(i -> isAllowed(userId))
                 .defaultIfEmpty(false);
     }
 
@@ -97,7 +106,7 @@ public class QueueService {
     public Mono<String> generateToken(Long userId) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String input = "user-queue-%d".formatted(userId);
+            String input = "user-queue-%d-%s".formatted(userId, tokenSecretSalt);
             byte[] encodedHash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder hexString = new StringBuilder();

@@ -10,3 +10,8 @@ spring:
 scheduler:
   enabled: true
   max-allow-user-count: 1000
+
+queue:
+  token:
+    secret-salt: "test-salt-key"
+

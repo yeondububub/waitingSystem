@@ -5,6 +5,7 @@ import com.example.webflux.controller.dto.AllowResultResponse;
 import com.example.webflux.controller.dto.AllowedResponse;
 import com.example.webflux.controller.dto.RankNumberResponse;
 import com.example.webflux.controller.dto.WaitingQueueResponse;
+import com.example.webflux.exception.QueueErrorCode;
 import com.example.webflux.service.QueueManager;
 import com.example.webflux.service.QueueService;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +64,10 @@ public class QueueController {
     public Mono<String> touch(@RequestParam("userId") Long userId, ServerWebExchange exchange) {
         log.info("touch : {}", userId);
 
-        return Mono.defer(() -> queueService.generateToken(userId))
+        return queueService.isAllowed(userId)
+                .filter(allowed -> allowed)
+                .switchIfEmpty(Mono.error(QueueErrorCode.NOT_ALLOWED_USER.build()))
+                .flatMap(allowed -> queueService.generateToken(userId))
                 .map(token -> {
                     exchange.getResponse().addCookie(
                             ResponseCookie.from(QueueController.USER_QUEUE_TOKEN, token)

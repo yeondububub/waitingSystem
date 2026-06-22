@@ -8,7 +8,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum QueueErrorCode {
 
-    ALREADY_RESISTER_USER(HttpStatus.CONFLICT, "WQ-0001", "Already registered in queue");
+    ALREADY_RESISTER_USER(HttpStatus.CONFLICT, "WQ-0001", "Already registered in queue"),
+    NOT_ALLOWED_USER(HttpStatus.FORBIDDEN, "WQ-0002", "Not allowed user to proceed");
 
     private final HttpStatus status;
     private final String code;

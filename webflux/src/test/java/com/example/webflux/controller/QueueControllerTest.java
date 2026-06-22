@@ -135,6 +135,8 @@ class QueueControllerTest {
         Long userId = 100L;
         String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
 
+        when(queueService.isAllowed(userId))
+                .thenReturn(Mono.just(true));
         when(queueService.generateToken(userId))
                 .thenReturn(Mono.just(token));
 
@@ -147,6 +149,24 @@ class QueueControllerTest {
                 .value("user-queue-token", s -> {
                     assertThat(s).isEqualToIgnoringCase(token);
                 });
+    }
 
+    @DisplayName("허용되지 않은 사용자 아이디로 토큰 요청 시 Forbidden 예외를 응답한다")
+    @Test
+    void touchForbidden() {
+        Long userId = 100L;
+
+        when(queueService.isAllowed(userId))
+                .thenReturn(Mono.just(false));
+
+        webTestClient.get()
+                .uri("/api/v1/touch?userId=" + userId)
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody(ServerExceptionResponse.class)
+                .value(response -> {
+                    assertThat(response.code()).isEqualTo("WQ-0002");
+                });
     }
 }

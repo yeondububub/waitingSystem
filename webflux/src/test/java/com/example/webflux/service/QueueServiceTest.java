@@ -83,7 +83,7 @@ class QueueServiceTest {
         Long userId = 100L;
 
         StepVerifier.create(queueService.generateToken(userId))
-                .expectNext("2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f")
+                .expectNext("2ec5dc889cafe9f2af88d4f9ffdc0ea2cf90e5ba2401ceddfac5686a9152ec8d")
                 .verifyComplete();
     }
 
@@ -110,18 +110,36 @@ class QueueServiceTest {
         Long userId = 100L;
         String token = "wrong-token";
 
+        // 사용자가 대기열에 등록 및 허용되지 않았고, 토큰도 잘못된 경우
         StepVerifier.create(queueService.isAllowedByToken(userId, token))
                 .expectNext(false)
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("올바른 토큰인 경우 허용 여부 확인 시 true를 반환한다")
+    @DisplayName("토큰은 올바르나 대기열 진입 허용 상태가 아닌 경우 false를 반환한다")
+    void isNotAllowedByTokenWhenNotProceeded() {
+        Long userId = 100L;
+
+        Mono<Boolean> test = queueService.generateToken(userId)
+                .flatMap(token -> queueService.isAllowedByToken(userId, token));
+
+        StepVerifier.create(test)
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("올바른 토큰이고 진입 허용 상태인 경우 허용 여부 확인 시 true를 반환한다")
     void isAllowedByToken() {
         Long userId = 100L;
-        String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
 
-        StepVerifier.create(queueService.isAllowedByToken(userId, token))
+        Mono<Boolean> test = queueService.enqueueWaitingQueue(userId)
+                .then(queueService.allow(1L))
+                .then(queueService.generateToken(userId))
+                .flatMap(token -> queueService.isAllowedByToken(userId, token));
+
+        StepVerifier.create(test)
                 .expectNext(true)
                 .verifyComplete();
     }
