@@ -199,4 +199,41 @@ class QueueServiceTest {
                 .expectNext(true)
                 .verifyComplete();
     }
+
+    @Test
+    @DisplayName("checked - 신규 유저 등록 및 대기 순위 반환 검증")
+    void checkedForNewUser() {
+        Long userId = 300L;
+
+        StepVerifier.create(queueService.checked(userId))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("checked - 이미 등록되어 대기 중인 유저의 대기 순위 반환 검증")
+    void checkedForAlreadyWaitingUser() {
+        Long user1 = 301L;
+        Long user2 = 302L;
+
+        Mono<Long> setup = queueService.enqueueWaitingQueue(user1)
+                .then(queueService.enqueueWaitingQueue(user2));
+
+        StepVerifier.create(setup.then(queueService.checked(user2)))
+                .expectNext(2L)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("checked - 이미 진입이 허용된 유저인 경우 0을 반환 검증")
+    void checkedForAllowedUser() {
+        Long userId = 303L;
+
+        Mono<Long> setup = queueService.enqueueWaitingQueue(userId)
+                .then(queueService.allow(1L));
+
+        StepVerifier.create(setup.then(queueService.checked(userId)))
+                .expectNext(0L)
+                .verifyComplete();
+    }
 }

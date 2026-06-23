@@ -80,8 +80,14 @@ public class QueueService {
     }
 
     public Mono<Long> checked(Long userId) {
-        return enqueueWaitingQueue(userId)
-                .onErrorResume(e -> rank(QueueManager.WAITING_QUEUE.getKey(), userId));
+        return isAllowed(userId)
+                .flatMap(allowed -> {
+                    if (allowed) {
+                        return Mono.just(0L);
+                    }
+                    return enqueueWaitingQueue(userId)
+                            .onErrorResume(e -> rank(QueueManager.WAITING_QUEUE.getKey(), userId));
+                });
     }
 
     public Mono<Long> rank(String queue, Long userId) {

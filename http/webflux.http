@@ -1,8 +1,23 @@
-### 대기열 큐에 추가
+### 대기열 큐에 추가 (사용자 3번 등록)
 POST http://localhost:9090/api/v1/waiting/queue?userId=3
 
-### rank
+### 대기열 큐에 추가 (사용자 4번 등록)
+POST http://localhost:9090/api/v1/waiting/queue?userId=4
+
+### 특정 사용자의 대기 순위(Rank) 조회
 GET http://localhost:9090/api/v1/waiting/queue/rank?userId=3
 
-### 대기열 큐 확인
+### 대기열 상태 확인 및 신규 등록 처리
 GET http://localhost:9090/api/v1/waiting/queue/checked?userId=3
+
+### [어드민] 대기열 유저 진입 수동 허용 (2명 진입 허용)
+POST http://localhost:9090/api/v1/waiting/queue/allow?count=2
+
+### 대기열 순위 재조회 (진입 허용 후 rank가 -1 또는 0 이하가 되었는지 확인)
+GET http://localhost:9090/api/v1/waiting/queue/rank?userId=3
+
+### 대기 완료 후 토큰 쿠키 발급 요청 (진입 완료자만 가능, 미진입자는 403 반환)
+GET http://localhost:9090/api/v1/touch?userId=3
+
+### 토큰 유효성 검증 API (token 값을 touch 응답값으로 대체하여 테스트 가능)
+GET http://localhost:9090/api/v1/queue/allowed?userId=3&token=b2a8a4b650b1e89bb5dd20ca93bb2fbdb2721772e8b34337445f75a0a6b6b252
